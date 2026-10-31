@@ -97,6 +97,7 @@ function initializeEventListeners() {
     
     setDifficulty(newDifficulty);
     storage.set('current_difficulty', newDifficulty);
+    storage.updateUserPreferences({ difficulty: newDifficulty });
     
     trackEvent(EVENT_TYPES.DIFFICULTY_CHANGE, {
       oldDifficulty,

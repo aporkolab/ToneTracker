@@ -46,8 +46,8 @@ function checkAndShowAchievements(won, score) {
   if (!won) return;
   
   try {
-    const gameStats = storage.getGameStats();
-    const highScores = storage.getHighScores();
+    const gameStats = storage.getGameStatistics();
+    const highScores = storage.getHighScores().scores;
     
     // First win achievement
     if (gameStats.gamesWon === 1) {
@@ -113,7 +113,8 @@ function endGame(isCorrect) {
   const gameDuration = Date.now() - state.startTime;
   const difficulty = state.difficulty;
   const accuracy = calculateAccuracy();
-  const finalScore = isCorrect ? state.score : 0;
+  const settings = DIFFICULTIES[difficulty];
+  const computerTipsUsed = settings.computerTipCount - state.computerTipCount;
   
   if (isCorrect) {
     ui.updateFeedback(STRINGS.congratulations);
@@ -132,8 +133,8 @@ function endGame(isCorrect) {
       difficulty: difficulty,
       accuracy: accuracy,
       targetColor: state.generatedColor,
-      attempts: DIFFICULTIES[difficulty].tips - state.tipCount + 1,
-      computerTipsUsed: DIFFICULTIES[difficulty].tips - state.computerTipCount,
+      attempts: settings.tipCount - state.tipCount + 1,
+      computerTipsUsed,
       timestamp: Date.now()
     });
     
@@ -159,8 +160,8 @@ function endGame(isCorrect) {
       difficulty: difficulty,
       accuracy: accuracy,
       targetColor: state.generatedColor,
-      attempts: DIFFICULTIES[difficulty].tips + 1,
-      computerTipsUsed: DIFFICULTIES[difficulty].tips - state.computerTipCount,
+      attempts: settings.tipCount,
+      computerTipsUsed,
       timestamp: Date.now()
     });
     
@@ -172,6 +173,8 @@ function endGame(isCorrect) {
     });
   }
   
+  const finalScore = isCorrect ? state.score : 0;
+
   // End performance timing
   endTiming('game-session', {
     won: isCorrect,
@@ -220,8 +223,8 @@ export function checkColor() {
     state.tipCount--;
     
     trackEvent(EVENT_TYPES.COLOR_GUESS, {
-      attempt: DIFFICULTIES[state.difficulty].tips - state.tipCount,
-      totalAttempts: DIFFICULTIES[state.difficulty].tips,
+      attempt: DIFFICULTIES[state.difficulty].tipCount - state.tipCount,
+      totalAttempts: DIFFICULTIES[state.difficulty].tipCount,
       accuracy: accuracy,
       remainingTips: state.tipCount,
       difficulty: state.difficulty
@@ -310,7 +313,8 @@ export function startGame() {
   trackGameStart(state.difficulty, state.generatedColor);
   startTiming('game-session');
 
-  setTimeout(() => {
+  state.memorizeTimeout = setTimeout(() => {
+    state.memorizeTimeout = null;
     ui.updateRandomColor('#FFFFFF', '');
     ui.setPulseAnimation(false);
     state.isGameActive = true;
