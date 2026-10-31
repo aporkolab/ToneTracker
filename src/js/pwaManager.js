@@ -4,7 +4,11 @@
  */
 
 import { analytics, EVENT_TYPES } from './analytics.js';
-import { ToneTrackerError, ERROR_CATEGORIES, ERROR_LEVELS } from './errorHandler.js';
+import {
+  ToneTrackerError,
+  ERROR_CATEGORIES,
+  ERROR_LEVELS,
+} from './errorHandler.js';
 
 /**
  * PWA Manager class for handling Progressive Web App features
@@ -15,7 +19,7 @@ export class PWAManager {
     this.isOnline = navigator.onLine;
     this.installPrompt = null;
     this.updateAvailable = false;
-    
+
     this.initialize();
   }
 
@@ -27,16 +31,16 @@ export class PWAManager {
     try {
       // Register service worker
       await this.registerServiceWorker();
-      
+
       // Setup connectivity monitoring
       this.setupConnectivityMonitoring();
-      
+
       // Setup install prompt handling
       this.setupInstallPrompt();
-      
+
       // Setup app lifecycle events
       this.setupAppLifecycle();
-      
+
       console.log('📱 PWA Manager initialized');
     } catch (error) {
       console.error('❌ PWA Manager initialization failed:', error);
@@ -55,13 +59,13 @@ export class PWAManager {
 
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
       });
 
       this.serviceWorker = registration;
-      
+
       console.log('✅ Service worker registered:', registration.scope);
-      
+
       // Handle updates
       registration.addEventListener('updatefound', () => {
         this.handleServiceWorkerUpdate(registration);
@@ -74,17 +78,18 @@ export class PWAManager {
 
       analytics.track(EVENT_TYPES.FEATURE_USED, {
         feature: 'service-worker-registration',
-        success: true
+        success: true,
       });
-
     } catch (error) {
       console.error('❌ Service worker registration failed:', error);
-      analytics.trackError(new ToneTrackerError(
-        'Service worker registration failed',
-        ERROR_CATEGORIES.SYSTEM,
-        ERROR_LEVELS.ERROR,
-        { originalError: error.message }
-      ));
+      analytics.trackError(
+        new ToneTrackerError(
+          'Service worker registration failed',
+          ERROR_CATEGORIES.SYSTEM,
+          ERROR_LEVELS.ERROR,
+          { originalError: error.message }
+        )
+      );
     }
   }
 
@@ -94,18 +99,21 @@ export class PWAManager {
    */
   handleServiceWorkerUpdate(registration) {
     const newWorker = registration.installing;
-    
+
     console.log('🔄 New service worker installing...');
-    
+
     newWorker.addEventListener('statechange', () => {
-      if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+      if (
+        newWorker.state === 'installed' &&
+        navigator.serviceWorker.controller
+      ) {
         console.log('✨ New service worker ready!');
         this.updateAvailable = true;
         this.showUpdatePrompt();
-        
+
         analytics.track(EVENT_TYPES.FEATURE_USED, {
           feature: 'service-worker-update',
-          available: true
+          available: true,
         });
       }
     });
@@ -255,14 +263,14 @@ export class PWAManager {
   async applyUpdate() {
     if (this.serviceWorker && this.serviceWorker.waiting) {
       this.serviceWorker.waiting.postMessage({ type: 'SKIP_WAITING' });
-      
+
       // Reload page when new worker takes control
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         window.location.reload();
       });
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
-        feature: 'service-worker-update-applied'
+        feature: 'service-worker-update-applied',
       });
     }
   }
@@ -276,9 +284,9 @@ export class PWAManager {
       console.log('🌐 Connection restored');
       this.isOnline = true;
       this.hideOfflineIndicator();
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
-        feature: 'connectivity-online'
+        feature: 'connectivity-online',
       });
     });
 
@@ -286,9 +294,9 @@ export class PWAManager {
       console.log('📡 Connection lost');
       this.isOnline = false;
       this.showOfflineIndicator();
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
-        feature: 'connectivity-offline'
+        feature: 'connectivity-offline',
       });
     });
 
@@ -353,7 +361,7 @@ export class PWAManager {
       this.showInstallPrompt();
 
       analytics.track(EVENT_TYPES.FEATURE_USED, {
-        feature: 'install-prompt-available'
+        feature: 'install-prompt-available',
       });
     });
   }
@@ -365,7 +373,10 @@ export class PWAManager {
   showInstallPrompt() {
     // Don't show if already installed or user dismissed recently
     const dismissed = localStorage.getItem('install-prompt-dismissed');
-    if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) {
+    if (
+      dismissed &&
+      Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000
+    ) {
       return; // Don't show for 7 days after dismissal
     }
 
@@ -435,17 +446,19 @@ export class PWAManager {
     document.body.appendChild(installBanner);
 
     // Add event listeners
-    installBanner.querySelector('.install-yes').addEventListener('click', () => {
-      this.installApp();
-      installBanner.remove();
-    });
+    installBanner
+      .querySelector('.install-yes')
+      .addEventListener('click', () => {
+        this.installApp();
+        installBanner.remove();
+      });
 
     installBanner.querySelector('.install-no').addEventListener('click', () => {
       localStorage.setItem('install-prompt-dismissed', Date.now().toString());
       installBanner.remove();
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
-        feature: 'install-prompt-dismissed'
+        feature: 'install-prompt-dismissed',
       });
     });
 
@@ -466,23 +479,25 @@ export class PWAManager {
     try {
       this.installPrompt.prompt();
       const { outcome } = await this.installPrompt.userChoice;
-      
+
       console.log('📱 Install outcome:', outcome);
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
         feature: 'app-install-attempt',
-        outcome: outcome
+        outcome: outcome,
       });
 
       this.installPrompt = null;
     } catch (error) {
       console.error('❌ Install failed:', error);
-      analytics.trackError(new ToneTrackerError(
-        'App installation failed',
-        ERROR_CATEGORIES.SYSTEM,
-        ERROR_LEVELS.ERROR,
-        { originalError: error.message }
-      ));
+      analytics.trackError(
+        new ToneTrackerError(
+          'App installation failed',
+          ERROR_CATEGORIES.SYSTEM,
+          ERROR_LEVELS.ERROR,
+          { originalError: error.message }
+        )
+      );
     }
   }
 
@@ -494,24 +509,25 @@ export class PWAManager {
     // Track app installation
     window.addEventListener('appinstalled', () => {
       console.log('✅ App installed successfully');
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
         feature: 'app-installed-success',
-        timestamp: Date.now()
+        timestamp: Date.now(),
       });
     });
 
     // Detect PWA mode
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                        window.navigator.standalone === true;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
 
     if (isStandalone) {
       console.log('📱 Running as PWA');
       document.documentElement.classList.add('pwa-mode');
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
         feature: 'pwa-mode-detected',
-        displayMode: 'standalone'
+        displayMode: 'standalone',
       });
     }
 
@@ -531,14 +547,14 @@ export class PWAManager {
    */
   handleAppForeground() {
     console.log('📱 App in foreground');
-    
+
     // Check for updates
     if (this.serviceWorker) {
       this.serviceWorker.update();
     }
-    
+
     analytics.track(EVENT_TYPES.FEATURE_USED, {
-      feature: 'app-foreground'
+      feature: 'app-foreground',
     });
   }
 
@@ -548,12 +564,12 @@ export class PWAManager {
    */
   handleAppBackground() {
     console.log('📱 App in background');
-    
+
     // Sync data
     this.syncInBackground();
-    
+
     analytics.track(EVENT_TYPES.FEATURE_USED, {
-      feature: 'app-background'
+      feature: 'app-background',
     });
   }
 
@@ -562,7 +578,10 @@ export class PWAManager {
    * @private
    */
   async syncInBackground() {
-    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+    if (
+      'serviceWorker' in navigator &&
+      'sync' in window.ServiceWorkerRegistration.prototype
+    ) {
       try {
         const registration = await navigator.serviceWorker.ready;
         await registration.sync.register('analytics-sync');
@@ -583,8 +602,9 @@ export class PWAManager {
       isOnline: this.isOnline,
       canInstall: !!this.installPrompt,
       updateAvailable: this.updateAvailable,
-      isStandalone: window.matchMedia('(display-mode: standalone)').matches || 
-                   window.navigator.standalone === true
+      isStandalone:
+        window.matchMedia('(display-mode: standalone)').matches ||
+        window.navigator.standalone === true,
     };
   }
 
@@ -595,24 +615,26 @@ export class PWAManager {
     try {
       // Clear caches
       const cacheNames = await caches.keys();
-      await Promise.all(cacheNames.map(name => caches.delete(name)));
-      
+      await Promise.all(cacheNames.map((name) => caches.delete(name)));
+
       // Clear local storage (keep user preferences)
-      const keysToKeep = ['tonetracker_user_preferences', 'tonetracker_user_id'];
+      const keysToKeep = [
+        'tonetracker_user_preferences',
+        'tonetracker_user_id',
+      ];
       const allKeys = Object.keys(localStorage);
-      
-      allKeys.forEach(key => {
+
+      allKeys.forEach((key) => {
         if (!keysToKeep.includes(key)) {
           localStorage.removeItem(key);
         }
       });
-      
+
       console.log('🧹 App data cleared');
-      
+
       analytics.track(EVENT_TYPES.FEATURE_USED, {
-        feature: 'app-data-cleared'
+        feature: 'app-data-cleared',
       });
-      
     } catch (error) {
       console.error('❌ Failed to clear app data:', error);
       throw error;
@@ -627,12 +649,12 @@ export class PWAManager {
       try {
         const granted = await navigator.storage.persist();
         console.log('💾 Persistent storage:', granted ? 'granted' : 'denied');
-        
+
         analytics.track(EVENT_TYPES.FEATURE_USED, {
           feature: 'persistent-storage-request',
-          granted: granted
+          granted: granted,
         });
-        
+
         return granted;
       } catch (error) {
         console.error('❌ Persistent storage request failed:', error);

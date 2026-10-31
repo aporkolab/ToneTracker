@@ -20,29 +20,29 @@ export const EVENT_TYPES = {
   GAME_LOSE: 'game_lose',
   COLOR_GUESS: 'color_guess',
   COMPUTER_TIP_USED: 'computer_tip_used',
-  
+
   // UI events
   DIFFICULTY_CHANGE: 'difficulty_change',
   LANGUAGE_CHANGE: 'language_change',
   THEME_CHANGE: 'theme_change',
   SOUND_TOGGLE: 'sound_toggle',
-  
+
   // User journey
   PAGE_VIEW: 'page_view',
   SESSION_START: 'session_start',
   SESSION_END: 'session_end',
   FEATURE_USED: 'feature_used',
   ERROR_OCCURRED: 'error_occurred',
-  
+
   // Performance
   LOAD_TIME: 'load_time',
   RENDER_TIME: 'render_time',
   PERFORMANCE_ISSUE: 'performance_issue',
-  
+
   // Accessibility
   ACCESSIBILITY_FEATURE_USED: 'accessibility_feature_used',
   KEYBOARD_NAVIGATION: 'keyboard_navigation',
-  SCREEN_READER_DETECTED: 'screen_reader_detected'
+  SCREEN_READER_DETECTED: 'screen_reader_detected',
 };
 
 /**
@@ -56,7 +56,7 @@ export const EVENT_CATEGORIES = {
   PERFORMANCE: 'performance',
   ERROR: 'error',
   USER_JOURNEY: 'user_journey',
-  ACCESSIBILITY: 'accessibility'
+  ACCESSIBILITY: 'accessibility',
 };
 
 /**
@@ -71,13 +71,13 @@ const ANALYTICS_CONFIG = {
   enableLocalStorage: true, // Store events locally
   enableExternalReporting: false, // Send to external analytics service
   privacyMode: true, // Enhanced privacy protection
-  
+
   // External service configuration (placeholder)
   externalService: {
     endpoint: null,
     apiKey: null,
-    enabled: false
-  }
+    enabled: false,
+  },
 };
 
 /**
@@ -93,19 +93,19 @@ export class Analytics {
     this.batchTimer = null;
     this.isEnabled = true;
     this.userId = this.getUserId();
-    
+
     // Device and environment detection
     this.deviceInfo = this.collectDeviceInfo();
-    
+
     // Initialize session
     this.initializeSession();
-    
+
     // Setup automatic flushing
     this.setupAutoFlush();
-    
+
     // Setup page visibility handling
     this.setupVisibilityHandling();
-    
+
     // Load stored events
     this.loadStoredEvents();
   }
@@ -141,9 +141,11 @@ export class Analytics {
   collectDeviceInfo() {
     const nav = navigator;
     const screen = window.screen;
-    
+
     return {
-      userAgent: this.config.privacyMode ? this.hashString(nav.userAgent) : nav.userAgent,
+      userAgent: this.config.privacyMode
+        ? this.hashString(nav.userAgent)
+        : nav.userAgent,
       language: nav.language,
       languages: nav.languages,
       platform: nav.platform,
@@ -165,8 +167,8 @@ export class Analytics {
         gamepads: 'getGamepads' in nav,
         geolocation: 'geolocation' in nav,
         notifications: 'Notification' in window,
-        serviceWorker: 'serviceWorker' in nav
-      }
+        serviceWorker: 'serviceWorker' in nav,
+      },
     };
   }
 
@@ -178,7 +180,7 @@ export class Analytics {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return `hash_${Math.abs(hash).toString(36)}`;
@@ -217,7 +219,7 @@ export class Analytics {
     this.track(EVENT_TYPES.SESSION_START, {
       sessionId: this.sessionId,
       deviceInfo: this.deviceInfo,
-      timestamp: this.sessionStart
+      timestamp: this.sessionStart,
     });
   }
 
@@ -242,7 +244,7 @@ export class Analytics {
       if (document.hidden) {
         this.track(EVENT_TYPES.SESSION_END, {
           sessionDuration: Date.now() - this.sessionStart,
-          eventsTracked: this.events.length
+          eventsTracked: this.events.length,
         });
         this.flush();
       } else {
@@ -254,7 +256,7 @@ export class Analytics {
     window.addEventListener('beforeunload', () => {
       this.track(EVENT_TYPES.SESSION_END, {
         sessionDuration: Date.now() - this.sessionStart,
-        eventsTracked: this.events.length
+        eventsTracked: this.events.length,
       });
       this.flush(true); // Force immediate flush
     });
@@ -319,10 +321,10 @@ export class Analytics {
         language: navigator.language,
         viewport: {
           width: window.innerWidth,
-          height: window.innerHeight
-        }
+          height: window.innerHeight,
+        },
       },
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
     // Add to events array
@@ -363,32 +365,37 @@ export class Analytics {
    */
   getCategoryForEvent(eventType) {
     const gameEvents = [
-      EVENT_TYPES.GAME_START, EVENT_TYPES.GAME_END, 
-      EVENT_TYPES.GAME_WIN, EVENT_TYPES.GAME_LOSE,
-      EVENT_TYPES.COLOR_GUESS, EVENT_TYPES.COMPUTER_TIP_USED
-    ];
-    
-    const uiEvents = [
-      EVENT_TYPES.DIFFICULTY_CHANGE, EVENT_TYPES.LANGUAGE_CHANGE,
-      EVENT_TYPES.THEME_CHANGE, EVENT_TYPES.SOUND_TOGGLE
+      EVENT_TYPES.GAME_START,
+      EVENT_TYPES.GAME_END,
+      EVENT_TYPES.GAME_WIN,
+      EVENT_TYPES.GAME_LOSE,
+      EVENT_TYPES.COLOR_GUESS,
+      EVENT_TYPES.COMPUTER_TIP_USED,
     ];
 
-    const performanceEvents = [
-      EVENT_TYPES.LOAD_TIME, EVENT_TYPES.RENDER_TIME
+    const uiEvents = [
+      EVENT_TYPES.DIFFICULTY_CHANGE,
+      EVENT_TYPES.LANGUAGE_CHANGE,
+      EVENT_TYPES.THEME_CHANGE,
+      EVENT_TYPES.SOUND_TOGGLE,
     ];
+
+    const performanceEvents = [EVENT_TYPES.LOAD_TIME, EVENT_TYPES.RENDER_TIME];
 
     const accessibilityEvents = [
       EVENT_TYPES.ACCESSIBILITY_FEATURE_USED,
       EVENT_TYPES.KEYBOARD_NAVIGATION,
-      EVENT_TYPES.SCREEN_READER_DETECTED
+      EVENT_TYPES.SCREEN_READER_DETECTED,
     ];
 
     if (gameEvents.includes(eventType)) return EVENT_CATEGORIES.GAME;
     if (uiEvents.includes(eventType)) return EVENT_CATEGORIES.UI;
-    if (performanceEvents.includes(eventType)) return EVENT_CATEGORIES.PERFORMANCE;
-    if (accessibilityEvents.includes(eventType)) return EVENT_CATEGORIES.ACCESSIBILITY;
+    if (performanceEvents.includes(eventType))
+      return EVENT_CATEGORIES.PERFORMANCE;
+    if (accessibilityEvents.includes(eventType))
+      return EVENT_CATEGORIES.ACCESSIBILITY;
     if (eventType === EVENT_TYPES.ERROR_OCCURRED) return EVENT_CATEGORIES.ERROR;
-    
+
     return EVENT_CATEGORIES.USER_JOURNEY;
   }
 
@@ -412,9 +419,12 @@ export class Analytics {
     if (this.events.length === 0) return;
 
     const eventsToFlush = [...this.events];
-    
+
     try {
-      if (this.config.enableExternalReporting && this.config.externalService.enabled) {
+      if (
+        this.config.enableExternalReporting &&
+        this.config.externalService.enabled
+      ) {
         await this.sendToExternalService(eventsToFlush);
       }
 
@@ -423,14 +433,13 @@ export class Analytics {
 
       // Clear sent events
       this.events = [];
-      
+
       if (this.config.enableLocalStorage) {
         this.storeEvents();
       }
-
     } catch (error) {
       console.warn('Failed to flush analytics events:', error);
-      
+
       // On error, keep events for retry
       if (!force) {
         return;
@@ -444,7 +453,7 @@ export class Analytics {
    */
   async sendToExternalService(events) {
     const { endpoint, apiKey } = this.config.externalService;
-    
+
     if (!endpoint) {
       console.warn('External analytics endpoint not configured');
       return;
@@ -455,17 +464,17 @@ export class Analytics {
       metadata: {
         source: 'ToneTracker',
         version: '2.0.0',
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     };
 
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(apiKey && { 'Authorization': `Bearer ${apiKey}` })
+        ...(apiKey && { Authorization: `Bearer ${apiKey}` }),
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -483,24 +492,27 @@ export class Analytics {
         totalEvents: 0,
         eventCounts: {},
         lastUpdated: null,
-        sessions: []
+        sessions: [],
       });
 
       summary.totalEvents += events.length;
       summary.lastUpdated = new Date().toISOString();
 
       // Count events by type
-      events.forEach(event => {
-        summary.eventCounts[event.type] = (summary.eventCounts[event.type] || 0) + 1;
+      events.forEach((event) => {
+        summary.eventCounts[event.type] =
+          (summary.eventCounts[event.type] || 0) + 1;
       });
 
       // Track session info
-      const sessionEvents = events.filter(e => e.type === EVENT_TYPES.SESSION_START);
-      sessionEvents.forEach(event => {
+      const sessionEvents = events.filter(
+        (e) => e.type === EVENT_TYPES.SESSION_START
+      );
+      sessionEvents.forEach((event) => {
         summary.sessions.push({
           sessionId: event.properties.sessionId,
           startTime: event.createdAt,
-          deviceInfo: event.properties.deviceInfo
+          deviceInfo: event.properties.deviceInfo,
         });
       });
 
@@ -522,7 +534,7 @@ export class Analytics {
     this.track(EVENT_TYPES.GAME_START, {
       difficulty,
       targetColor: this.config.privacyMode ? 'redacted' : targetColor,
-      gameId: this.generateEventId()
+      gameId: this.generateEventId(),
     });
   }
 
@@ -533,7 +545,7 @@ export class Analytics {
       time,
       difficulty,
       accuracy,
-      performance: this.calculatePerformanceMetrics(score, time, accuracy)
+      performance: this.calculatePerformanceMetrics(score, time, accuracy),
     });
   }
 
@@ -543,14 +555,14 @@ export class Analytics {
       targetColor: this.config.privacyMode ? 'redacted' : targetColor,
       accuracy,
       isCorrect,
-      deltaE: this.calculateDeltaE(userGuess, targetColor)
+      deltaE: this.calculateDeltaE(userGuess, targetColor),
     });
   }
 
   trackFeatureUsage(feature, context = {}) {
     this.track(EVENT_TYPES.FEATURE_USED, {
       feature,
-      ...context
+      ...context,
     });
   }
 
@@ -560,7 +572,7 @@ export class Analytics {
       category: error.category || 'unknown',
       level: error.level || 'error',
       stack: this.config.privacyMode ? 'redacted' : error.stack,
-      ...context
+      ...context,
     });
   }
 
@@ -569,7 +581,7 @@ export class Analytics {
       metric,
       value,
       unit: 'ms',
-      ...context
+      ...context,
     });
   }
 
@@ -581,7 +593,7 @@ export class Analytics {
     return {
       scorePerSecond: time > 0 ? score / (time / 1000) : 0,
       efficiency: accuracy > 0 ? score / accuracy : 0,
-      timeCategory: this.categorizeTime(time)
+      timeCategory: this.categorizeTime(time),
     };
   }
 
@@ -606,19 +618,17 @@ export class Analytics {
     try {
       const hex1 = color1.replace('#', '');
       const hex2 = color2.replace('#', '');
-      
+
       const r1 = parseInt(hex1.substr(0, 2), 16);
       const g1 = parseInt(hex1.substr(2, 2), 16);
       const b1 = parseInt(hex1.substr(4, 2), 16);
-      
+
       const r2 = parseInt(hex2.substr(0, 2), 16);
       const g2 = parseInt(hex2.substr(2, 2), 16);
       const b2 = parseInt(hex2.substr(4, 2), 16);
-      
+
       return Math.sqrt(
-        Math.pow(r2 - r1, 2) + 
-        Math.pow(g2 - g1, 2) + 
-        Math.pow(b2 - b1, 2)
+        Math.pow(r2 - r1, 2) + Math.pow(g2 - g1, 2) + Math.pow(b2 - b1, 2)
       );
     } catch {
       return 0;
@@ -638,8 +648,8 @@ export class Analytics {
         startTime: this.sessionStart,
         duration: Date.now() - this.sessionStart,
         eventsCount: this.events.length,
-        isActive: this.isSessionActive()
-      }
+        isActive: this.isSessionActive(),
+      },
     };
   }
 
@@ -681,9 +691,13 @@ export class Analytics {
 export const analytics = new Analytics();
 
 // Convenience functions
-export const trackEvent = (type, properties, category) => analytics.track(type, properties, category);
-export const trackGameStart = (difficulty, color) => analytics.trackGameStart(difficulty, color);
-export const trackGameEnd = (won, score, time, difficulty, accuracy) => 
+export const trackEvent = (type, properties, category) =>
+  analytics.track(type, properties, category);
+export const trackGameStart = (difficulty, color) =>
+  analytics.trackGameStart(difficulty, color);
+export const trackGameEnd = (won, score, time, difficulty, accuracy) =>
   analytics.trackGameEnd(won, score, time, difficulty, accuracy);
-export const trackError = (error, context) => analytics.trackError(error, context);
-export const trackFeature = (feature, context) => analytics.trackFeatureUsage(feature, context);
+export const trackError = (error, context) =>
+  analytics.trackError(error, context);
+export const trackFeature = (feature, context) =>
+  analytics.trackFeatureUsage(feature, context);

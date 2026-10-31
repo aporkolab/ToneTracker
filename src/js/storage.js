@@ -3,7 +3,11 @@
  * Provides type-safe localStorage operations with data validation and migration support
  */
 
-import { ToneTrackerError, ERROR_CATEGORIES, ERROR_LEVELS } from './errorHandler.js';
+import {
+  ToneTrackerError,
+  ERROR_CATEGORIES,
+  ERROR_LEVELS,
+} from './errorHandler.js';
 
 /**
  * Storage keys used throughout the application
@@ -17,7 +21,7 @@ export const STORAGE_KEYS = {
   GAME_HISTORY: 'tonetracker_game_history',
   SETTINGS: 'tonetracker_settings',
   LOCALE: 'tonetracker_locale',
-  ERRORS: 'tonetracker_errors'
+  ERRORS: 'tonetracker_errors',
 };
 
 /**
@@ -44,18 +48,18 @@ const DEFAULT_GAME_STATISTICS = {
   difficultyCounts: {
     easy: { played: 0, won: 0, totalScore: 0 },
     medium: { played: 0, won: 0, totalScore: 0 },
-    hard: { played: 0, won: 0, totalScore: 0 }
+    hard: { played: 0, won: 0, totalScore: 0 },
   },
   colorAccuracyHistory: [], // Last 50 accuracy percentages
   sessionStats: {
     startTime: null,
     gamesPlayed: 0,
-    gamesWon: 0
+    gamesWon: 0,
   },
   achievements: [],
   lastPlayed: null,
   createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
+  updatedAt: new Date().toISOString(),
 };
 
 /**
@@ -77,10 +81,10 @@ const DEFAULT_USER_PREFERENCES = {
     reduceMotion: false,
     highContrast: false,
     screenReaderMode: false,
-    largerText: false
+    largerText: false,
   },
   createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
+  updatedAt: new Date().toISOString(),
 };
 
 /**
@@ -91,7 +95,7 @@ const DEFAULT_HIGH_SCORES = {
   scores: [], // Array of {score, time, difficulty, date, accuracy}
   maxScores: 100, // Keep only top 100 scores
   createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString()
+  updatedAt: new Date().toISOString(),
 };
 
 /**
@@ -102,7 +106,7 @@ export class StorageManager {
     this.isSupported = this.checkStorageSupport();
     this.cache = new Map();
     this.listeners = new Map();
-    
+
     if (this.isSupported) {
       this.migrateData();
     }
@@ -190,7 +194,7 @@ export class StorageManager {
    */
   getRaw(key) {
     if (!this.isSupported) return null;
-    
+
     try {
       const data = localStorage.getItem(key);
       return data ? JSON.parse(data) : null;
@@ -215,13 +219,13 @@ export class StorageManager {
     try {
       const serialized = JSON.stringify(value);
       localStorage.setItem(key, serialized);
-      
+
       // Update cache
       this.cache.set(key, value);
-      
+
       // Notify listeners
       this.notifyListeners(key, value);
-      
+
       return true;
     } catch (error) {
       throw new ToneTrackerError(
@@ -256,10 +260,10 @@ export class StorageManager {
       }
 
       const parsed = JSON.parse(data);
-      
+
       // Update cache
       this.cache.set(key, parsed);
-      
+
       return parsed;
     } catch (error) {
       console.warn(`Failed to get data for key ${key}:`, error);
@@ -290,7 +294,7 @@ export class StorageManager {
     if (!this.isSupported) return;
 
     try {
-      Object.values(STORAGE_KEYS).forEach(key => {
+      Object.values(STORAGE_KEYS).forEach((key) => {
         localStorage.removeItem(key);
         this.cache.delete(key);
       });
@@ -305,7 +309,10 @@ export class StorageManager {
    * @returns {Object} Game statistics
    */
   getGameStatistics() {
-    return this.get(STORAGE_KEYS.GAME_STATISTICS, structuredClone(DEFAULT_GAME_STATISTICS));
+    return this.get(
+      STORAGE_KEYS.GAME_STATISTICS,
+      structuredClone(DEFAULT_GAME_STATISTICS)
+    );
   }
 
   /**
@@ -317,14 +324,15 @@ export class StorageManager {
     const updated = {
       ...current,
       ...updates,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     // Recalculate derived values
     if ('totalGames' in updates || 'totalScore' in updates) {
-      updated.averageScore = updated.totalGames > 0 
-        ? Math.round(updated.totalScore / updated.totalGames) 
-        : 0;
+      updated.averageScore =
+        updated.totalGames > 0
+          ? Math.round(updated.totalScore / updated.totalGames)
+          : 0;
     }
 
     this.set(STORAGE_KEYS.GAME_STATISTICS, updated);
@@ -336,18 +344,11 @@ export class StorageManager {
    * @param {Object} gameResult - Game result data
    */
   recordGame(gameResult) {
-    const {
-      won,
-      score,
-      time,
-      difficulty,
-      accuracy,
-      targetColor,
-      userGuess
-    } = gameResult;
+    const { won, score, time, difficulty, accuracy, targetColor, userGuess } =
+      gameResult;
 
     const stats = this.getGameStatistics();
-    
+
     // Update basic stats
     stats.totalGames += 1;
     stats.totalTimeSpent += time;
@@ -358,11 +359,11 @@ export class StorageManager {
       stats.totalScore += score;
       stats.currentStreak += 1;
       stats.bestStreak = Math.max(stats.bestStreak, stats.currentStreak);
-      
+
       if (score > stats.bestScore) {
         stats.bestScore = score;
       }
-      
+
       if (!stats.bestTime || time < stats.bestTime) {
         stats.bestTime = time;
       }
@@ -398,10 +399,9 @@ export class StorageManager {
     }
 
     // Update derived values
-    stats.averageScore = stats.gamesWon > 0 
-      ? Math.round(stats.totalScore / stats.gamesWon) 
-      : 0;
-    
+    stats.averageScore =
+      stats.gamesWon > 0 ? Math.round(stats.totalScore / stats.gamesWon) : 0;
+
     stats.lastPlayed = new Date().toISOString();
     stats.updatedAt = new Date().toISOString();
 
@@ -416,7 +416,7 @@ export class StorageManager {
         accuracy,
         date: new Date().toISOString(),
         targetColor,
-        userGuess
+        userGuess,
       });
     }
 
@@ -428,7 +428,10 @@ export class StorageManager {
    * @returns {Object} User preferences
    */
   getUserPreferences() {
-    return this.get(STORAGE_KEYS.USER_PREFERENCES, structuredClone(DEFAULT_USER_PREFERENCES));
+    return this.get(
+      STORAGE_KEYS.USER_PREFERENCES,
+      structuredClone(DEFAULT_USER_PREFERENCES)
+    );
   }
 
   /**
@@ -440,7 +443,7 @@ export class StorageManager {
     const updated = {
       ...current,
       ...updates,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     this.set(STORAGE_KEYS.USER_PREFERENCES, updated);
@@ -452,7 +455,10 @@ export class StorageManager {
    * @returns {Object} High scores data
    */
   getHighScores() {
-    return this.get(STORAGE_KEYS.HIGH_SCORES, structuredClone(DEFAULT_HIGH_SCORES));
+    return this.get(
+      STORAGE_KEYS.HIGH_SCORES,
+      structuredClone(DEFAULT_HIGH_SCORES)
+    );
   }
 
   /**
@@ -461,11 +467,11 @@ export class StorageManager {
    */
   addHighScore(scoreData) {
     const highScores = this.getHighScores();
-    
+
     highScores.scores.push({
       ...scoreData,
       id: Date.now().toString(),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
 
     // Sort by score descending, then by time ascending
@@ -483,7 +489,7 @@ export class StorageManager {
 
     highScores.updatedAt = new Date().toISOString();
     this.set(STORAGE_KEYS.HIGH_SCORES, highScores);
-    
+
     return highScores;
   }
 
@@ -498,7 +504,7 @@ export class StorageManager {
     let scores = highScores.scores;
 
     if (difficulty) {
-      scores = scores.filter(score => score.difficulty === difficulty);
+      scores = scores.filter((score) => score.difficulty === difficulty);
     }
 
     return scores.slice(0, limit);
@@ -514,9 +520,9 @@ export class StorageManager {
     if (!this.listeners.has(key)) {
       this.listeners.set(key, new Set());
     }
-    
+
     this.listeners.get(key).add(callback);
-    
+
     // Return unsubscribe function
     return () => {
       const keyListeners = this.listeners.get(key);
@@ -536,7 +542,7 @@ export class StorageManager {
   notifyListeners(key, value) {
     const keyListeners = this.listeners.get(key);
     if (keyListeners) {
-      keyListeners.forEach(callback => {
+      keyListeners.forEach((callback) => {
         try {
           callback(value, key);
         } catch (error) {
@@ -552,14 +558,14 @@ export class StorageManager {
    */
   exportData() {
     const data = {};
-    
+
     Object.entries(STORAGE_KEYS).forEach(([name, key]) => {
       data[name] = this.get(key);
     });
 
     data.exportedAt = new Date().toISOString();
     data.version = SCHEMA_VERSION;
-    
+
     return data;
   }
 
@@ -592,7 +598,7 @@ export class StorageManager {
           }
         }
       });
-      
+
       console.log('Data import completed successfully');
     } catch (error) {
       throw new ToneTrackerError(
@@ -616,7 +622,7 @@ export class StorageManager {
     let totalSize = 0;
     const keyData = {};
 
-    Object.values(STORAGE_KEYS).forEach(key => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
       try {
         const data = localStorage.getItem(key);
         const size = data ? new Blob([data]).size : 0;
@@ -624,7 +630,7 @@ export class StorageManager {
         keyData[key] = {
           exists: !!data,
           size: size,
-          sizeFormatted: this.formatBytes(size)
+          sizeFormatted: this.formatBytes(size),
         };
       } catch (error) {
         keyData[key] = { error: error.message };
@@ -636,7 +642,7 @@ export class StorageManager {
       totalSize: totalSize,
       totalSizeFormatted: this.formatBytes(totalSize),
       keys: keyData,
-      cacheSize: this.cache.size
+      cacheSize: this.cache.size,
     };
   }
 
@@ -646,11 +652,11 @@ export class StorageManager {
    */
   formatBytes(bytes) {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 }
