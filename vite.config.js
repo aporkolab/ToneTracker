@@ -14,31 +14,23 @@ export default defineConfig({
     assetsDir: 'assets',
     
     // Code splitting for better caching
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          // Core game modules
-          game: [
-            'src/js/game.js',
-            'src/js/state.js',
-            'src/js/ui.js'
-          ],
-          
-          // Utility modules
-          utils: [
-            'src/js/colorUtils.js',
-            'src/js/constants.js'
-          ],
-          
-          // Advanced features
-          features: [
-            'src/js/analytics.js',
-            'src/js/storage.js',
-            'src/js/i18n.js',
-            'src/js/performance.js',
-            'src/js/pwaManager.js',
-            'src/js/errorHandler.js',
-            'src/js/stateManager.js'
+        codeSplitting: {
+          // Keep each group limited to its own modules (Rollup manualChunks semantics)
+          includeDependenciesRecursively: false,
+          groups: [
+            // Core game modules
+            { name: 'game', test: /src\/js\/(game|state|ui)\.js$/ },
+
+            // Utility modules
+            { name: 'utils', test: /src\/js\/(colorUtils|constants)\.js$/ },
+
+            // Advanced features
+            {
+              name: 'features',
+              test: /src\/js\/(analytics|storage|i18n|performance|pwaManager|errorHandler|stateManager)\.js$/
+            }
           ]
         }
       }
@@ -50,7 +42,7 @@ export default defineConfig({
     sourcemap: true,
     
     // Minification settings
-    minify: 'esbuild',
+    minify: 'oxc',
     target: 'esnext',
     
     // Bundle size warnings

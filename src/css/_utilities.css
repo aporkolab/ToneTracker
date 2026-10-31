@@ -345,24 +345,24 @@
 /* === RESPONSIVE UTILITIES === */
 
 @media (max-width: 767px) {
-  .sm\\:d-none { display: none !important; }
-  .sm\\:d-block { display: block !important; }
-  .sm\\:d-flex { display: flex !important; }
+  .sm\:d-none { display: none !important; }
+  .sm\:d-block { display: block !important; }
+  .sm\:d-flex { display: flex !important; }
   
-  .sm\\:text-center { text-align: center !important; }
-  .sm\\:text-left { text-align: left !important; }
+  .sm\:text-center { text-align: center !important; }
+  .sm\:text-left { text-align: left !important; }
   
-  .sm\\:p-2 { padding: var(--space-2) !important; }
-  .sm\\:p-3 { padding: var(--space-3) !important; }
-  .sm\\:p-4 { padding: var(--space-4) !important; }
+  .sm\:p-2 { padding: var(--space-2) !important; }
+  .sm\:p-3 { padding: var(--space-3) !important; }
+  .sm\:p-4 { padding: var(--space-4) !important; }
   
-  .sm\\:m-0 { margin: var(--space-0) !important; }
-  .sm\\:m-2 { margin: var(--space-2) !important; }
+  .sm\:m-0 { margin: var(--space-0) !important; }
+  .sm\:m-2 { margin: var(--space-2) !important; }
   
-  .sm\\:w-full { width: 100% !important; }
-  .sm\\:h-auto { height: auto !important; }
+  .sm\:w-full { width: 100% !important; }
+  .sm\:h-auto { height: auto !important; }
   
-  .sm\\:flex-column { flex-direction: column !important; }
-  .sm\\:justify-center { justify-content: center !important; }
-  .sm\\:items-center { align-items: center !important; }
+  .sm\:flex-column { flex-direction: column !important; }
+  .sm\:justify-center { justify-content: center !important; }
+  .sm\:items-center { align-items: center !important; }
 }

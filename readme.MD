@@ -46,6 +46,23 @@ ToneTracker is a modern, progressive web application that challenges players to 
 - **Code Splitting**: Lazy-loaded modules for faster initial load
 - **Bundle Optimization**: Tree-shaking and minification
 
+## 🧰 Tech Stack
+
+| Area | Tooling |
+|------|---------|
+| Runtime | Vanilla JavaScript (ES modules), HTML, CSS, Service Worker |
+| Build | Vite 8 (Rolldown, Oxc minifier) |
+| Unit tests | Vitest 5 + happy-dom 21, `@testing-library/jest-dom` 7, V8 coverage |
+| E2E tests | Playwright 1.64 (Chromium) |
+| Quality | ESLint 10 (flat config), Prettier 3 |
+| CI/CD | GitHub Actions (Node 24), GitHub Pages deployment |
+
+### Prerequisites
+
+- **Node.js 22.12+** (Node 24 LTS recommended; the version used in CI) and npm
+- **Python 3** only for `npm run serve` (optional static server)
+- No environment variables or secrets are needed for local development. CI optionally uses the `CODECOV_TOKEN` repository secret for coverage upload.
+
 ## 🚀 Quick Start
 
 ### Development Setup
@@ -55,8 +72,8 @@ ToneTracker is a modern, progressive web application that challenges players to 
 git clone https://github.com/APorkolab/ToneTracker.git
 cd ToneTracker
 
-# Install dependencies
-npm install
+# Install dependencies (exactly as locked)
+npm ci
 
 # Start development server
 npm run dev
@@ -90,13 +107,15 @@ npm run preview         # Preview production build
 # Testing
 npm test               # Run unit tests in watch mode
 npm run test:run       # Run tests once
-npm run test:coverage  # Generate coverage report
-npm run e2e           # Run end-to-end tests
-npm run e2e:ui        # Run E2E tests with UI
+npm run test:coverage  # Run tests with coverage (fails below 80%)
+npm run e2e:install    # Download Playwright browsers (first run only)
+npm run e2e            # Build, start preview server and run E2E tests
+npm run e2e:ui         # Run E2E tests with UI
 
 # Quality Assurance
-npm run lint          # Lint JavaScript files
-npm run format        # Format code with Prettier
+npm run lint           # Lint JavaScript files
+npm run format         # Format code with Prettier
+npm run format:check   # Verify formatting without writing (used in CI)
 npm run security:audit # Security vulnerability check
 
 # Performance
@@ -104,6 +123,10 @@ npm run performance:audit  # Lighthouse audit
 npm run analyze           # Bundle size analysis
 npm run size:check       # Check bundle size limits
 ```
+
+### Testing
+
+Unit tests live in `tests/unit/` (`*.test.js`, run by Vitest), end-to-end tests in `tests/e2e/` (`*.e2e.js`, run by Playwright against the production preview on port 4173). The CI pipeline runs lint, the format check, unit tests with coverage and the E2E suite on every push and pull request; deployment to GitHub Pages only happens from `main`.
 
 ## 🎯 Game Architecture
 

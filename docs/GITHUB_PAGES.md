@@ -113,7 +113,7 @@ nslookup tonetracker.app
 
 **Debug steps:**
 1. Check **Actions** tab for error details
-2. Verify Node.js version (should be 20+)
+2. Verify Node.js version (should be 22.12+)
 3. Test build locally: `npm run build`
 4. Check if all dependencies are installed
 

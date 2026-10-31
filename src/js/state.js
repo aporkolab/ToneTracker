@@ -6,6 +6,7 @@ export const state = {
   score: 0,
   tipCount: 0,
   timerInterval: null,
+  memorizeTimeout: null,
   computerTipCount: 0,
   isGameActive: false,
   difficulty: 'easy',
@@ -20,6 +21,11 @@ export function resetState() {
     clearInterval(state.timerInterval);
   }
   state.timerInterval = null;
+  // Cancel a pending "memorize" phase so a restarted game is not activated by a stale timer
+  if (state.memorizeTimeout) {
+    clearTimeout(state.memorizeTimeout);
+  }
+  state.memorizeTimeout = null;
   state.computerTipCount = 0;
   state.isGameActive = false;
 }

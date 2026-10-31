@@ -44,3 +44,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Generated reports
+lighthouse-report.html
+lighthouse-audit.report.*

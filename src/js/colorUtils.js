@@ -8,12 +8,12 @@ function hexToRgb(hex) {
   if (!hex || typeof hex !== 'string') {
     throw new Error('Invalid hex color: must be a non-empty string');
   }
-  
+
   const cleanHex = hex.replace('#', '');
   if (!/^[0-9A-Fa-f]{6}$/.test(cleanHex)) {
     throw new Error(`Invalid hex color format: ${hex}`);
   }
-  
+
   const bigint = parseInt(cleanHex, 16);
   const r = (bigint >> 16) & 255;
   const g = (bigint >> 8) & 255;
@@ -176,10 +176,10 @@ export function calculateColorDifference(color1, color2) {
   try {
     const rgb1 = hexToRgb(color1);
     const rgb2 = hexToRgb(color2);
-    
+
     const lab1 = rgbToLab(rgb1);
     const lab2 = rgbToLab(rgb2);
-    
+
     return deltaE76(lab1, lab2);
   } catch (error) {
     console.error('Color difference calculation failed:', error);
