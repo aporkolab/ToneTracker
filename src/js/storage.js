@@ -305,7 +305,7 @@ export class StorageManager {
    * @returns {Object} Game statistics
    */
   getGameStatistics() {
-    return this.get(STORAGE_KEYS.GAME_STATISTICS, { ...DEFAULT_GAME_STATISTICS });
+    return this.get(STORAGE_KEYS.GAME_STATISTICS, structuredClone(DEFAULT_GAME_STATISTICS));
   }
 
   /**
@@ -428,7 +428,7 @@ export class StorageManager {
    * @returns {Object} User preferences
    */
   getUserPreferences() {
-    return this.get(STORAGE_KEYS.USER_PREFERENCES, { ...DEFAULT_USER_PREFERENCES });
+    return this.get(STORAGE_KEYS.USER_PREFERENCES, structuredClone(DEFAULT_USER_PREFERENCES));
   }
 
   /**
@@ -452,7 +452,7 @@ export class StorageManager {
    * @returns {Object} High scores data
    */
   getHighScores() {
-    return this.get(STORAGE_KEYS.HIGH_SCORES, { ...DEFAULT_HIGH_SCORES });
+    return this.get(STORAGE_KEYS.HIGH_SCORES, structuredClone(DEFAULT_HIGH_SCORES));
   }
 
   /**
