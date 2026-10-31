@@ -52,9 +52,10 @@ export class ToneTrackerError extends Error {
     this.level = level;
     this.context = context;
     this.timestamp = new Date().toISOString();
-    this.stack = Error.captureStackTrace
-      ? Error.captureStackTrace(this, ToneTrackerError)
-      : this.stack;
+    // captureStackTrace sets this.stack in place and returns undefined
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ToneTrackerError);
+    }
   }
 }
 

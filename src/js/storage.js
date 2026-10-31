@@ -160,7 +160,10 @@ export class StorageManager {
    * @private
    */
   migrateGameStatistics(oldStats) {
-    const newStats = { ...DEFAULT_GAME_STATISTICS, ...oldStats };
+    const newStats = {
+      ...structuredClone(DEFAULT_GAME_STATISTICS),
+      ...oldStats,
+    };
     newStats.version = SCHEMA_VERSION;
     newStats.updatedAt = new Date().toISOString();
     this.set(STORAGE_KEYS.GAME_STATISTICS, newStats);
@@ -171,7 +174,10 @@ export class StorageManager {
    * @private
    */
   migrateUserPreferences(oldPrefs) {
-    const newPrefs = { ...DEFAULT_USER_PREFERENCES, ...oldPrefs };
+    const newPrefs = {
+      ...structuredClone(DEFAULT_USER_PREFERENCES),
+      ...oldPrefs,
+    };
     newPrefs.version = SCHEMA_VERSION;
     newPrefs.updatedAt = new Date().toISOString();
     this.set(STORAGE_KEYS.USER_PREFERENCES, newPrefs);
@@ -182,7 +188,7 @@ export class StorageManager {
    * @private
    */
   migrateHighScores(oldScores) {
-    const newScores = { ...DEFAULT_HIGH_SCORES, ...oldScores };
+    const newScores = { ...structuredClone(DEFAULT_HIGH_SCORES), ...oldScores };
     newScores.version = SCHEMA_VERSION;
     newScores.updatedAt = new Date().toISOString();
     this.set(STORAGE_KEYS.HIGH_SCORES, newScores);
