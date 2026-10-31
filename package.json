@@ -2,14 +2,15 @@
   "name": "tonetracker",
   "version": "1.0.0",
   "description": "A color guessing game.",
-  "main": "src/script.js",
+  "main": "src/js/main.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint src/js/**/*.js",
-    "format": "prettier --write src/js/**/*.js",
+    "lint": "eslint \"src/js/**/*.js\"",
+    "format": "prettier --write \"src/js/**/*.js\"",
+    "format:check": "prettier --check \"src/js/**/*.js\"",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
@@ -34,6 +35,9 @@
   ],
   "author": "Dr. Porkoláb Ádám",
   "license": "MIT",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",

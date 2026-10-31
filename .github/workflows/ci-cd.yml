@@ -2,9 +2,16 @@ name: 🚀 ToneTracker CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches-ignore: [ gh-pages, 'dependabot/**' ]
   pull_request:
     branches: [ main ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   # Quality Checks
@@ -14,12 +21,12 @@ jobs:
     
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       
     - name: 📦 Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
         
     - name: 📚 Install dependencies
@@ -29,23 +36,20 @@ jobs:
       run: npm run lint
       
     - name: 🎨 Check code formatting
-      run: npm run format -- --check
+      run: npm run format:check
       
-    - name: 🧪 Run unit tests
-      run: npm run test:run
-      
-    - name: 📊 Generate test coverage
+    - name: 🧪 Run unit tests with coverage
       run: npm run test:coverage
       
     - name: 📈 Upload coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v6
       continue-on-error: true
       with:
-        file: ./coverage/lcov.info
+        files: ./coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}
         
     - name: 🔒 Security audit
-      run: npm audit --omit=dev
+      run: npm audit --audit-level=high
       continue-on-error: true
 
   # Performance & E2E Tests
@@ -56,12 +60,12 @@ jobs:
     
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       
     - name: 📦 Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
         
     - name: 📚 Install dependencies
@@ -71,13 +75,13 @@ jobs:
       run: npm run build
       
     - name: 🎭 Install Playwright browsers
-      run: npx playwright install --with-deps
+      run: npx playwright install --with-deps chromium
       
     - name: 🧪 Run E2E tests
       run: npm run e2e
       
     - name: 📱 Upload E2E artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: failure()
       with:
         name: playwright-report
@@ -95,23 +99,16 @@ jobs:
     
     steps:
     - name: 📥 Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       
     - name: 📦 Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: '20'
+        node-version: '24'
         cache: 'npm'
         
     - name: 📚 Install dependencies
       run: npm ci
-      
-    - name: 🌐 Install Chrome for Lighthouse
-      run: |
-        wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-        echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-        sudo apt-get update
-        sudo apt-get install -y google-chrome-stable
       
     - name: 🏗️ Build for production
       run: npm run build
@@ -162,14 +159,14 @@ jobs:
         allow_empty_commit: false
         
     - name: 📈 Upload build artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: dist
         path: dist/
         retention-days: 30
         
     - name: 📊 Upload Lighthouse report
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       if: always()
       with:
         name: lighthouse-report
