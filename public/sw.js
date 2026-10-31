@@ -3,27 +3,17 @@
  * Provides offline functionality, caching, and background sync
  */
 
-const CACHE_NAME = 'tonetracker-v2.0.0';
+const CACHE_NAME = 'tonetracker-v2.0.1';
 const STATIC_CACHE_NAME = `${CACHE_NAME}-static`;
 const DYNAMIC_CACHE_NAME = `${CACHE_NAME}-dynamic`;
 const API_CACHE_NAME = `${CACHE_NAME}-api`;
 
-// Files to cache immediately (App Shell)
+// Files to cache immediately (App Shell). cache.addAll() fails the whole install
+// on a single 404, so only list files that exist in the build output; hashed
+// bundles are cached at runtime via DYNAMIC_PATTERNS.
 const STATIC_FILES = [
   '/',
   '/index.html',
-  '/src/css/style.css',
-  '/src/css/_accessibility.css',
-  '/src/js/main.js',
-  '/src/js/colorUtils.js',
-  '/src/js/errorHandler.js',
-  '/src/js/stateManager.js',
-  '/src/js/storage.js',
-  '/src/js/analytics.js',
-  '/src/js/performance.js',
-  '/src/js/i18n.js',
-  '/assets/icons/icon-192x192.png',
-  '/assets/icons/icon-512x512.png',
   '/manifest.json'
 ];
 
