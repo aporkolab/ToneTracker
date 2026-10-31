@@ -16,10 +16,10 @@ export class PerformanceMonitor {
     this.observers = new Map();
     this.startTimes = new Map();
     this.isEnabled = true;
-    
+
     // Initialize performance observers
     this.initializeObservers();
-    
+
     // Track initial page load metrics
     this.trackPageLoad();
   }
@@ -35,7 +35,7 @@ export class PerformanceMonitor {
         // Navigation timing
         const navObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          entries.forEach(entry => {
+          entries.forEach((entry) => {
             if (entry.entryType === 'navigation') {
               this.recordNavigationMetrics(entry);
             }
@@ -47,7 +47,7 @@ export class PerformanceMonitor {
         // Resource timing
         const resourceObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          entries.forEach(entry => {
+          entries.forEach((entry) => {
             if (entry.entryType === 'resource') {
               this.recordResourceMetrics(entry);
             }
@@ -59,7 +59,7 @@ export class PerformanceMonitor {
         // Paint timing
         const paintObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          entries.forEach(entry => {
+          entries.forEach((entry) => {
             if (entry.entryType === 'paint') {
               this.recordPaintMetrics(entry);
             }
@@ -69,10 +69,12 @@ export class PerformanceMonitor {
         this.observers.set('paint', paintObserver);
 
         // Largest Contentful Paint
-        if ('largest-contentful-paint' in PerformanceObserver.supportedEntryTypes) {
+        if (
+          'largest-contentful-paint' in PerformanceObserver.supportedEntryTypes
+        ) {
           const lcpObserver = new PerformanceObserver((list) => {
             const entries = list.getEntries();
-            entries.forEach(entry => {
+            entries.forEach((entry) => {
               this.recordMetric('largest-contentful-paint', entry.startTime);
             });
           });
@@ -84,8 +86,11 @@ export class PerformanceMonitor {
         if ('first-input' in PerformanceObserver.supportedEntryTypes) {
           const fidObserver = new PerformanceObserver((list) => {
             const entries = list.getEntries();
-            entries.forEach(entry => {
-              this.recordMetric('first-input-delay', entry.processingStart - entry.startTime);
+            entries.forEach((entry) => {
+              this.recordMetric(
+                'first-input-delay',
+                entry.processingStart - entry.startTime
+              );
             });
           });
           fidObserver.observe({ entryTypes: ['first-input'] });
@@ -97,17 +102,19 @@ export class PerformanceMonitor {
           let cumulativeLayoutShift = 0;
           const clsObserver = new PerformanceObserver((list) => {
             const entries = list.getEntries();
-            entries.forEach(entry => {
+            entries.forEach((entry) => {
               if (!entry.hadRecentInput) {
                 cumulativeLayoutShift += entry.value;
-                this.recordMetric('cumulative-layout-shift', cumulativeLayoutShift);
+                this.recordMetric(
+                  'cumulative-layout-shift',
+                  cumulativeLayoutShift
+                );
               }
             });
           });
           clsObserver.observe({ entryTypes: ['layout-shift'] });
           this.observers.set('cls', clsObserver);
         }
-
       } catch (error) {
         console.warn('Performance observers not supported:', error);
       }
@@ -124,25 +131,32 @@ export class PerformanceMonitor {
         setTimeout(() => {
           const timing = performance.timing;
           const navigation = performance.getEntriesByType('navigation')[0];
-          
+
           const metrics = {
             // Navigation timing metrics
             dns: timing.domainLookupEnd - timing.domainLookupStart,
             tcp: timing.connectEnd - timing.connectStart,
-            ssl: timing.secureConnectionStart > 0 ? timing.connectEnd - timing.secureConnectionStart : 0,
+            ssl:
+              timing.secureConnectionStart > 0
+                ? timing.connectEnd - timing.secureConnectionStart
+                : 0,
             ttfb: timing.responseStart - timing.navigationStart,
             download: timing.responseEnd - timing.responseStart,
             domInteractive: timing.domInteractive - timing.navigationStart,
-            domContentLoaded: timing.domContentLoadedEventEnd - timing.navigationStart,
+            domContentLoaded:
+              timing.domContentLoadedEventEnd - timing.navigationStart,
             domComplete: timing.domComplete - timing.navigationStart,
             loadComplete: timing.loadEventEnd - timing.navigationStart,
-            
+
             // Navigation API v2 metrics (if available)
             ...(navigation && {
               redirectTime: navigation.redirectEnd - navigation.redirectStart,
-              workerTime: navigation.workerStart > 0 ? navigation.responseStart - navigation.workerStart : 0,
-              fetchTime: navigation.responseEnd - navigation.fetchStart
-            })
+              workerTime:
+                navigation.workerStart > 0
+                  ? navigation.responseStart - navigation.workerStart
+                  : 0,
+              fetchTime: navigation.responseEnd - navigation.fetchStart,
+            }),
           };
 
           // Record all metrics
@@ -154,7 +168,6 @@ export class PerformanceMonitor {
 
           // Track overall page load time
           analytics.trackPerformance('page-load-total', metrics.loadComplete);
-          
         }, 100); // Small delay to ensure all timing data is available
       });
     }
@@ -173,7 +186,7 @@ export class PerformanceMonitor {
       'nav-response-time': entry.responseEnd - entry.responseStart,
       'nav-dom-interactive': entry.domInteractive,
       'nav-dom-content-loaded': entry.domContentLoadedEventEnd,
-      'nav-load-complete': entry.loadEventEnd
+      'nav-load-complete': entry.loadEventEnd,
     };
 
     Object.entries(metrics).forEach(([name, value]) => {
@@ -190,16 +203,16 @@ export class PerformanceMonitor {
   recordResourceMetrics(entry) {
     const resourceType = this.getResourceType(entry.name);
     const duration = entry.responseEnd - entry.startTime;
-    
+
     this.recordMetric(`resource-${resourceType}-time`, duration);
-    
+
     // Track slow resources (>1s)
     if (duration > 1000) {
       analytics.track(EVENT_TYPES.PERFORMANCE_ISSUE, {
         type: 'slow-resource',
         resource: entry.name,
         duration: duration,
-        resourceType: resourceType
+        resourceType: resourceType,
       });
     }
   }
@@ -231,7 +244,7 @@ export class PerformanceMonitor {
    */
   startTiming(label) {
     if (!this.isEnabled) return;
-    
+
     this.startTimes.set(label, performance.now());
   }
 
@@ -242,13 +255,13 @@ export class PerformanceMonitor {
    */
   endTiming(label, context = {}) {
     if (!this.isEnabled) return;
-    
+
     const startTime = this.startTimes.get(label);
     if (startTime !== undefined) {
       const duration = performance.now() - startTime;
       this.recordMetric(label, duration);
       this.startTimes.delete(label);
-      
+
       analytics.trackPerformance(label, duration, context);
     }
   }
@@ -261,16 +274,16 @@ export class PerformanceMonitor {
    */
   recordMetric(name, value, unit = 'ms') {
     if (!this.isEnabled) return;
-    
+
     const metric = {
       name,
       value,
       unit,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
-    
+
     this.metrics.set(name, metric);
-    
+
     // Log performance issues
     this.checkPerformanceThresholds(name, value);
   }
@@ -286,7 +299,7 @@ export class PerformanceMonitor {
       'first-input-delay': 100,
       'cumulative-layout-shift': 0.1,
       'first-contentful-paint': 1800,
-      'time-to-interactive': 3800
+      'time-to-interactive': 3800,
     };
 
     const threshold = thresholds[name];
@@ -295,7 +308,7 @@ export class PerformanceMonitor {
         metric: name,
         value: value,
         threshold: threshold,
-        severity: value > threshold * 2 ? 'high' : 'medium'
+        severity: value > threshold * 2 ? 'high' : 'medium',
       });
     }
   }
@@ -336,8 +349,8 @@ export class PerformanceMonitor {
       summary: {
         totalMetrics: this.metrics.size,
         criticalIssues: 0,
-        warnings: 0
-      }
+        warnings: 0,
+      },
     };
 
     // Analyze metrics for issues
@@ -346,7 +359,7 @@ export class PerformanceMonitor {
         'page-load-total': { critical: 5000, warning: 3000 },
         'largest-contentful-paint': { critical: 4000, warning: 2500 },
         'first-input-delay': { critical: 300, warning: 100 },
-        'cumulative-layout-shift': { critical: 0.25, warning: 0.1 }
+        'cumulative-layout-shift': { critical: 0.25, warning: 0.1 },
       };
 
       const threshold = thresholds[name];
@@ -366,7 +379,7 @@ export class PerformanceMonitor {
    * Cleanup performance monitor
    */
   destroy() {
-    this.observers.forEach(observer => observer.disconnect());
+    this.observers.forEach((observer) => observer.disconnect());
     this.observers.clear();
     this.clearMetrics();
   }
@@ -394,11 +407,11 @@ export class MemoryMonitor {
       usedJSHeapSize: memory.usedJSHeapSize,
       totalJSHeapSize: memory.totalJSHeapSize,
       jsHeapSizeLimit: memory.jsHeapSizeLimit,
-      heapUsagePercent: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100
+      heapUsagePercent: (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100,
     };
 
     this.snapshots.push(snapshot);
-    
+
     // Keep only last 100 snapshots
     if (this.snapshots.length > 100) {
       this.snapshots = this.snapshots.slice(-100);
@@ -421,15 +434,17 @@ export class MemoryMonitor {
     const recent = this.snapshots.slice(-10);
     const first = recent[0];
     const last = recent[recent.length - 1];
-    
-    const growthRate = (last.usedJSHeapSize - first.usedJSHeapSize) / first.usedJSHeapSize;
-    
-    if (growthRate > 0.5) { // 50% increase
+
+    const growthRate =
+      (last.usedJSHeapSize - first.usedJSHeapSize) / first.usedJSHeapSize;
+
+    if (growthRate > 0.5) {
+      // 50% increase
       analytics.track(EVENT_TYPES.PERFORMANCE_ISSUE, {
         type: 'potential-memory-leak',
         growthRate: growthRate,
         currentUsage: snapshot.heapUsagePercent,
-        totalHeapSize: snapshot.totalJSHeapSize
+        totalHeapSize: snapshot.totalJSHeapSize,
       });
     }
 
@@ -438,7 +453,7 @@ export class MemoryMonitor {
       analytics.track(EVENT_TYPES.PERFORMANCE_ISSUE, {
         type: 'high-memory-usage',
         heapUsagePercent: snapshot.heapUsagePercent,
-        severity: 'critical'
+        severity: 'critical',
       });
     }
   }
@@ -452,15 +467,18 @@ export class MemoryMonitor {
 
     const first = this.snapshots[0];
     const last = this.snapshots[this.snapshots.length - 1];
-    
+
     return {
       timespan: last.timestamp - first.timestamp,
       startUsage: first.usedJSHeapSize,
       endUsage: last.usedJSHeapSize,
       growth: last.usedJSHeapSize - first.usedJSHeapSize,
-      growthRate: (last.usedJSHeapSize - first.usedJSHeapSize) / first.usedJSHeapSize,
-      averageUsage: this.snapshots.reduce((sum, s) => sum + s.usedJSHeapSize, 0) / this.snapshots.length,
-      peakUsage: Math.max(...this.snapshots.map(s => s.usedJSHeapSize))
+      growthRate:
+        (last.usedJSHeapSize - first.usedJSHeapSize) / first.usedJSHeapSize,
+      averageUsage:
+        this.snapshots.reduce((sum, s) => sum + s.usedJSHeapSize, 0) /
+        this.snapshots.length,
+      peakUsage: Math.max(...this.snapshots.map((s) => s.usedJSHeapSize)),
     };
   }
 }
@@ -481,7 +499,7 @@ export class FPSMonitor {
    */
   start() {
     if (this.isRunning) return;
-    
+
     this.isRunning = true;
     this.lastTime = performance.now();
     this.tick();
@@ -507,11 +525,11 @@ export class FPSMonitor {
     const now = performance.now();
     const delta = now - this.lastTime;
     const fps = 1000 / delta;
-    
+
     this.samples.push({
       timestamp: now,
       fps: fps,
-      frameTime: delta
+      frameTime: delta,
     });
 
     // Keep only last 60 samples (approximately 1 second at 60fps)
@@ -521,13 +539,14 @@ export class FPSMonitor {
 
     // Check for FPS drops
     if (fps < 30 && this.samples.length > 10) {
-      const avgFps = this.samples.reduce((sum, s) => sum + s.fps, 0) / this.samples.length;
+      const avgFps =
+        this.samples.reduce((sum, s) => sum + s.fps, 0) / this.samples.length;
       if (avgFps < 45) {
         analytics.track(EVENT_TYPES.PERFORMANCE_ISSUE, {
           type: 'low-fps',
           currentFps: fps,
           averageFps: avgFps,
-          severity: fps < 20 ? 'critical' : 'medium'
+          severity: fps < 20 ? 'critical' : 'medium',
         });
       }
     }
@@ -543,16 +562,17 @@ export class FPSMonitor {
   getStats() {
     if (this.samples.length === 0) return null;
 
-    const fps = this.samples.map(s => s.fps);
-    const frameTimes = this.samples.map(s => s.frameTime);
+    const fps = this.samples.map((s) => s.fps);
+    const frameTimes = this.samples.map((s) => s.frameTime);
 
     return {
       currentFps: fps[fps.length - 1],
       averageFps: fps.reduce((sum, f) => sum + f, 0) / fps.length,
       minFps: Math.min(...fps),
       maxFps: Math.max(...fps),
-      averageFrameTime: frameTimes.reduce((sum, f) => sum + f, 0) / frameTimes.length,
-      samples: this.samples.length
+      averageFrameTime:
+        frameTimes.reduce((sum, f) => sum + f, 0) / frameTimes.length,
+      samples: this.samples.length,
     };
   }
 }
@@ -564,8 +584,10 @@ export const fpsMonitor = new FPSMonitor();
 
 // Convenience functions
 export const startTiming = (label) => performanceMonitor.startTiming(label);
-export const endTiming = (label, context) => performanceMonitor.endTiming(label, context);
-export const recordMetric = (name, value, unit) => performanceMonitor.recordMetric(name, value, unit);
+export const endTiming = (label, context) =>
+  performanceMonitor.endTiming(label, context);
+export const recordMetric = (name, value, unit) =>
+  performanceMonitor.recordMetric(name, value, unit);
 export const takeMemorySnapshot = () => memoryMonitor.takeSnapshot();
 export const startFPSMonitoring = () => fpsMonitor.start();
 export const stopFPSMonitoring = () => fpsMonitor.stop();

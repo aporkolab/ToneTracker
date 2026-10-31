@@ -3,7 +3,12 @@
  * Provides reactive state management with time-travel debugging capabilities
  */
 
-import { ToneTrackerError, ERROR_CATEGORIES, ERROR_LEVELS, logError } from './errorHandler.js';
+import {
+  ToneTrackerError,
+  ERROR_CATEGORIES,
+  ERROR_LEVELS,
+  logError,
+} from './errorHandler.js';
 
 /**
  * Deep freeze object to ensure immutability
@@ -11,7 +16,7 @@ import { ToneTrackerError, ERROR_CATEGORIES, ERROR_LEVELS, logError } from './er
  * @returns {Object} Deeply frozen object
  */
 function deepFreeze(obj) {
-  Object.getOwnPropertyNames(obj).forEach(name => {
+  Object.getOwnPropertyNames(obj).forEach((name) => {
     const prop = obj[name];
     if (typeof prop === 'object' && prop !== null) {
       deepFreeze(prop);
@@ -47,10 +52,8 @@ function deepClone(obj) {
  * @throws {ToneTrackerError} When state is invalid
  */
 function validateState(state) {
-  const requiredFields = [
-    'game', 'ui', 'user', 'system', 'history'
-  ];
-  
+  const requiredFields = ['game', 'ui', 'user', 'system', 'history'];
+
   for (const field of requiredFields) {
     if (!(field in state)) {
       throw new ToneTrackerError(
@@ -64,7 +67,10 @@ function validateState(state) {
 
   // Validate game state
   if (typeof state.game !== 'object') {
-    throw new ToneTrackerError('game state must be an object', ERROR_CATEGORIES.VALIDATION);
+    throw new ToneTrackerError(
+      'game state must be an object',
+      ERROR_CATEGORIES.VALIDATION
+    );
   }
 
   // Validate specific types
@@ -75,7 +81,8 @@ function validateState(state) {
     computerTipCount: (val) => typeof val === 'number' && val >= 0,
     isActive: (val) => typeof val === 'boolean',
     difficulty: (val) => ['easy', 'medium', 'hard'].includes(val),
-    startTime: (val) => val === null || val instanceof Date || typeof val === 'number'
+    startTime: (val) =>
+      val === null || val instanceof Date || typeof val === 'number',
   };
 
   for (const [field, validator] of Object.entries(gameValidation)) {
@@ -107,7 +114,7 @@ const initialState = deepFreeze({
     bestStreak: 0,
     totalGamesPlayed: 0,
     correctGuesses: 0,
-    averageTime: 0
+    averageTime: 0,
   },
   ui: {
     theme: 'dark',
@@ -118,19 +125,19 @@ const initialState = deepFreeze({
     feedback: {
       message: '',
       type: 'info', // 'info', 'success', 'warning', 'error'
-      visible: false
+      visible: false,
     },
     loading: {
       isLoading: false,
-      message: ''
-    }
+      message: '',
+    },
   },
   user: {
     preferences: {
       preferredDifficulty: 'easy',
       colorFormat: 'hex', // 'hex', 'rgb', 'hsl'
       autoStartNext: false,
-      showPercentage: true
+      showPercentage: true,
     },
     statistics: {
       gamesPlayed: 0,
@@ -138,8 +145,8 @@ const initialState = deepFreeze({
       averageScore: 0,
       bestScore: 0,
       totalTimeSpent: 0,
-      favoriteColors: []
-    }
+      favoriteColors: [],
+    },
   },
   system: {
     version: '2.0.0',
@@ -147,15 +154,15 @@ const initialState = deepFreeze({
     performance: {
       renderTime: 0,
       stateUpdateTime: 0,
-      memoryUsage: 0
+      memoryUsage: 0,
     },
-    errors: []
+    errors: [],
   },
   history: {
     states: [],
     currentIndex: -1,
-    maxHistory: 50
-  }
+    maxHistory: 50,
+  },
 });
 
 /**
@@ -168,10 +175,10 @@ export class StateManager {
     this._middlewares = [];
     this._actionHistory = [];
     this._isReplaying = false;
-    
+
     // Validate initial state
     validateState(this._state);
-    
+
     // Add to history
     this._addToHistory(this._state, { type: 'INIT' });
   }
@@ -201,13 +208,13 @@ export class StateManager {
     }
 
     const id = Symbol('subscription');
-    
+
     if (!this._subscribers.has(path)) {
       this._subscribers.set(path, new Map());
     }
-    
+
     this._subscribers.get(path).set(id, callback);
-    
+
     // Return unsubscribe function
     return () => {
       const pathSubscribers = this._subscribers.get(path);
@@ -236,7 +243,7 @@ export class StateManager {
     }
 
     const startTime = performance.now();
-    
+
     try {
       // Run middlewares
       let processedAction = action;
@@ -245,32 +252,32 @@ export class StateManager {
       }
 
       const newState = this._reducer(this._state, processedAction);
-      
+
       // Validate new state
       validateState(newState);
-      
+
       // Update state
       const previousState = this._state;
       this._state = newState;
-      
+
       // Add to history (unless replaying)
       if (!this._isReplaying) {
         this._addToHistory(newState, processedAction);
         this._actionHistory.push({
           action: processedAction,
           timestamp: new Date().toISOString(),
-          executionTime: performance.now() - startTime
+          executionTime: performance.now() - startTime,
         });
       }
-      
+
       // Update performance metrics
-      this._state.system.performance.stateUpdateTime = performance.now() - startTime;
-      
+      this._state.system.performance.stateUpdateTime =
+        performance.now() - startTime;
+
       // Notify subscribers
       this._notifySubscribers(previousState, newState, processedAction);
-      
+
       return this.getState();
-      
     } catch (error) {
       logError(
         new ToneTrackerError(
@@ -317,11 +324,14 @@ export class StateManager {
     this._isReplaying = true;
     const targetState = this._state.history.states[index];
     const previousState = this._state;
-    
+
     this._state = deepClone(targetState.state);
     this._state.history.currentIndex = index;
-    
-    this._notifySubscribers(previousState, this._state, { type: 'TIME_TRAVEL', payload: { index } });
+
+    this._notifySubscribers(previousState, this._state, {
+      type: 'TIME_TRAVEL',
+      payload: { index },
+    });
     this._isReplaying = false;
   }
 
@@ -333,9 +343,11 @@ export class StateManager {
     return {
       ...this._state.system.performance,
       actionHistory: this._actionHistory.slice(-10), // Last 10 actions
-      subscriberCount: Array.from(this._subscribers.values())
-        .reduce((total, pathSubs) => total + pathSubs.size, 0),
-      historySize: this._state.history.states.length
+      subscriberCount: Array.from(this._subscribers.values()).reduce(
+        (total, pathSubs) => total + pathSubs.size,
+        0
+      ),
+      historySize: this._state.history.states.length,
     };
   }
 
@@ -355,10 +367,10 @@ export class StateManager {
       ...this._state,
       system: {
         ...this._state.system,
-        exportedAt: new Date().toISOString()
-      }
+        exportedAt: new Date().toISOString(),
+      },
     };
-    
+
     return JSON.stringify(exportData, (key, value) => {
       if (value instanceof Date) {
         return { __type: 'Date', value: value.toISOString() };
@@ -379,11 +391,10 @@ export class StateManager {
         }
         return value;
       });
-      
+
       validateState(importedState);
       this._state = importedState;
       this._addToHistory(this._state, { type: 'IMPORT_STATE' });
-      
     } catch (error) {
       throw new ToneTrackerError(
         `Failed to import state: ${error.message}`,
@@ -400,22 +411,28 @@ export class StateManager {
    */
   _reducer(state, action) {
     const newState = deepClone(state);
-    
+
     switch (action.type) {
       case 'RESET_STATE':
         return deepClone(initialState);
-        
+
       case 'SET_GAME_FIELD':
         if (!action.payload || typeof action.payload.field !== 'string') {
-          throw new ToneTrackerError('SET_GAME_FIELD requires field and value', ERROR_CATEGORIES.VALIDATION);
+          throw new ToneTrackerError(
+            'SET_GAME_FIELD requires field and value',
+            ERROR_CATEGORIES.VALIDATION
+          );
         }
         newState.game[action.payload.field] = action.payload.value;
         break;
-        
+
       case 'UPDATE_SCORE':
-        newState.game.score = Math.max(0, newState.game.score + (action.payload?.delta || 0));
+        newState.game.score = Math.max(
+          0,
+          newState.game.score + (action.payload?.delta || 0)
+        );
         break;
-        
+
       case 'START_GAME':
         newState.game = {
           ...newState.game,
@@ -423,34 +440,40 @@ export class StateManager {
           startTime: action.payload?.startTime || Date.now(),
           generatedColor: action.payload?.color || null,
           tipCount: action.payload?.tipCount || 3,
-          computerTipCount: action.payload?.computerTipCount || 3
+          computerTipCount: action.payload?.computerTipCount || 3,
         };
         break;
-        
+
       case 'END_GAME':
         newState.game.isActive = false;
         newState.game.totalGamesPlayed += 1;
-        
+
         if (action.payload?.won) {
           newState.game.correctGuesses += 1;
           newState.game.streak += 1;
-          newState.game.bestStreak = Math.max(newState.game.bestStreak, newState.game.streak);
+          newState.game.bestStreak = Math.max(
+            newState.game.bestStreak,
+            newState.game.streak
+          );
         } else {
           newState.game.streak = 0;
         }
-        
+
         // Update user statistics
         newState.user.statistics.gamesPlayed += 1;
         if (action.payload?.won) {
           newState.user.statistics.gamesWon += 1;
         }
         break;
-        
+
       case 'SET_UI_FIELD': {
         if (!action.payload || typeof action.payload.field !== 'string') {
-          throw new ToneTrackerError('SET_UI_FIELD requires field and value', ERROR_CATEGORIES.VALIDATION);
+          throw new ToneTrackerError(
+            'SET_UI_FIELD requires field and value',
+            ERROR_CATEGORIES.VALIDATION
+          );
         }
-        
+
         // Handle nested fields like 'feedback.message'
         const fieldParts = action.payload.field.split('.');
         let target = newState.ui;
@@ -460,33 +483,36 @@ export class StateManager {
         target[fieldParts[fieldParts.length - 1]] = action.payload.value;
         break;
       }
-        
+
       case 'SET_USER_PREFERENCE':
         if (!action.payload || typeof action.payload.key !== 'string') {
-          throw new ToneTrackerError('SET_USER_PREFERENCE requires key and value', ERROR_CATEGORIES.VALIDATION);
+          throw new ToneTrackerError(
+            'SET_USER_PREFERENCE requires key and value',
+            ERROR_CATEGORIES.VALIDATION
+          );
         }
         newState.user.preferences[action.payload.key] = action.payload.value;
         break;
-        
+
       case 'ADD_ERROR':
         newState.system.errors.push({
           ...action.payload,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
         // Keep only last 20 errors
         if (newState.system.errors.length > 20) {
           newState.system.errors = newState.system.errors.slice(-20);
         }
         break;
-        
+
       default:
         // Allow custom action types through middleware
         break;
     }
-    
+
     // Update system timestamp
     newState.system.lastUpdated = new Date().toISOString();
-    
+
     return newState;
   }
 
@@ -498,23 +524,23 @@ export class StateManager {
     const historyEntry = {
       state: deepClone(state),
       action: deepClone(action),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     const newHistory = [...state.history.states];
-    
+
     // Remove any states after current index if we're not at the end
     if (state.history.currentIndex < newHistory.length - 1) {
       newHistory.splice(state.history.currentIndex + 1);
     }
-    
+
     newHistory.push(historyEntry);
-    
+
     // Limit history size
     if (newHistory.length > state.history.maxHistory) {
       newHistory.shift();
     }
-    
+
     state.history.states = newHistory;
     state.history.currentIndex = newHistory.length - 1;
   }
@@ -547,7 +573,7 @@ export class StateManager {
         // Path-specific subscribers
         const currentValue = this._getNestedValue(newState, path);
         const previousValue = this._getNestedValue(previousState, path);
-        
+
         if (currentValue !== previousValue) {
           for (const callback of subscribers.values()) {
             try {
@@ -575,8 +601,13 @@ export class StateManager {
    * @private
    */
   _getNestedValue(obj, path) {
-    return path.split('.').reduce((current, key) => 
-      current && current[key] !== undefined ? current[key] : undefined, obj);
+    return path
+      .split('.')
+      .reduce(
+        (current, key) =>
+          current && current[key] !== undefined ? current[key] : undefined,
+        obj
+      );
   }
 }
 
@@ -587,49 +618,49 @@ export const stateManager = new StateManager();
 export const actions = {
   startGame: (color, difficulty = 'easy') => ({
     type: 'START_GAME',
-    payload: { 
-      color, 
+    payload: {
+      color,
       startTime: Date.now(),
       tipCount: { easy: 3, medium: 2, hard: 1 }[difficulty],
-      computerTipCount: { easy: 3, medium: 2, hard: 1 }[difficulty]
-    }
+      computerTipCount: { easy: 3, medium: 2, hard: 1 }[difficulty],
+    },
   }),
-  
+
   endGame: (won = false) => ({
     type: 'END_GAME',
-    payload: { won }
+    payload: { won },
   }),
-  
+
   updateScore: (delta) => ({
     type: 'UPDATE_SCORE',
-    payload: { delta }
+    payload: { delta },
   }),
-  
+
   setGameField: (field, value) => ({
     type: 'SET_GAME_FIELD',
-    payload: { field, value }
+    payload: { field, value },
   }),
-  
+
   setUIField: (field, value) => ({
     type: 'SET_UI_FIELD',
-    payload: { field, value }
+    payload: { field, value },
   }),
-  
+
   setFeedback: (message, type = 'info', visible = true) => ({
     type: 'SET_UI_FIELD',
-    payload: { 
+    payload: {
       field: 'feedback',
-      value: { message, type, visible }
-    }
+      value: { message, type, visible },
+    },
   }),
-  
+
   setUserPreference: (key, value) => ({
     type: 'SET_USER_PREFERENCE',
-    payload: { key, value }
+    payload: { key, value },
   }),
-  
+
   addError: (error) => ({
     type: 'ADD_ERROR',
-    payload: error
-  })
+    payload: error,
+  }),
 };

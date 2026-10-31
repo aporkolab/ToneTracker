@@ -19,7 +19,7 @@ Before deployment, ensure you have:
 1. **Repository Access**: Write access to the ToneTracker GitHub repository
 2. **Domain Setup**: DNS records properly configured for `tonetracker.app`
 3. **GitHub Pages**: Enabled in repository settings
-4. **Node.js**: Version 20+ for local development and testing
+4. **Node.js**: Version 22.12+ (Node 24 LTS recommended, used in CI) for local development and testing
 
 ## 🔧 Configuration Files
 
@@ -28,10 +28,10 @@ Before deployment, ensure you have:
 The CI/CD pipeline consists of four main jobs:
 
 #### **Quality Job** 🔍
-- Runs ESLint and Prettier checks
-- Executes unit tests with Vitest
-- Generates test coverage reports
-- Performs security audits
+- Runs ESLint and Prettier checks (`npm run lint`, `npm run format:check`)
+- Executes unit tests with Vitest and enforces the 80% coverage thresholds
+- Uploads the LCOV coverage report to Codecov
+- Performs a security audit (`npm audit`, reported but non-blocking)
 
 #### **E2E Job** 🎭
 - Runs Playwright end-to-end tests
@@ -42,7 +42,7 @@ The CI/CD pipeline consists of four main jobs:
 - Builds production-optimized bundle
 - Copies CNAME file to dist directory
 - Validates build output
-- Analyzes bundle size with bundlesize
+- Reports bundle sizes in the step summary
 - Runs Lighthouse performance audit
 - Deploys to GitHub Pages with custom domain
 - Uploads build and performance artifacts
@@ -71,10 +71,12 @@ export default defineConfig({
     outDir: 'dist',  // Output directory for GitHub Pages
     assetsDir: 'assets',  // Asset organization
     sourcemap: true,  // Source maps for debugging
-    // Code splitting and optimization
-    rollupOptions: {
+    // Code splitting (Vite 8 / Rolldown)
+    rolldownOptions: {
       output: {
-        manualChunks: { /* optimized chunks */ }
+        codeSplitting: {
+          groups: [ /* game, utils, features chunks */ ]
+        }
       }
     }
   }
@@ -87,19 +89,10 @@ export default defineConfig({
 
 Deployment happens automatically when:
 
-1. **Push to main branch**: Triggers full CI/CD pipeline
-2. **Pull request**: Runs quality checks and tests (no deployment)
-3. **Manual trigger**: Can be triggered from GitHub Actions tab
+1. **Push to main branch**: Triggers the full CI/CD pipeline including deployment
+2. **Push to any other branch / pull request to main**: Runs quality checks and E2E tests (no deployment)
 
-### Manual Deployment
-
-To trigger a manual deployment:
-
-1. Go to the repository's **Actions** tab
-2. Select **🚀 ToneTracker CI/CD** workflow
-3. Click **Run workflow**
-4. Select the `main` branch
-5. Click **Run workflow**
+The workflow has no manual (`workflow_dispatch`) trigger; to redeploy, push or merge to `main`, or re-run the latest `main` run from the **Actions** tab.
 
 ### Local Build Testing
 
@@ -167,16 +160,17 @@ The deployment pipeline includes several performance checks:
 
 ### Performance Budgets
 
-Configure in `.github/workflows/ci-cd.yml`:
+Configure in `bundlesize.config.json` and check locally with `npm run size:check` after a build:
 
-```yaml
-bundlesize:
-  - path: "dist/assets/*.js"
-    maxSize: "250kb"
-    compression: gzip
-  - path: "dist/assets/*.css"
-    maxSize: "50kb"
-    compression: gzip
+```json
+{
+  "files": [
+    { "path": "dist/assets/features-*.js", "maxSize": "50kb", "compression": "gzip" },
+    { "path": "dist/assets/game-*.js", "maxSize": "15kb", "compression": "gzip" },
+    { "path": "dist/assets/index-*.js", "maxSize": "15kb", "compression": "gzip" },
+    { "path": "dist/assets/index-*.css", "maxSize": "30kb", "compression": "gzip" }
+  ]
+}
 ```
 
 ## 🐛 Troubleshooting
@@ -196,7 +190,7 @@ bundlesize:
 4. Ensure HTTPS enforcement is enabled after DNS propagation
 
 #### **Build Failures**
-1. Check Node.js version compatibility (requires v20+)
+1. Check Node.js version compatibility (requires v22.12+)
 2. Verify all dependencies are properly installed
 3. Run tests locally to identify issues
 4. Check ESLint and Prettier formatting
@@ -217,7 +211,7 @@ npm run build && npm run preview
 npm run test:run
 
 # Check code quality
-npm run lint && npm run format -- --check
+npm run lint && npm run format:check
 
 # Analyze bundle size
 npm run analyze

@@ -1,6 +1,12 @@
 import { DOM, STRINGS } from './constants.js';
 import { state } from './state.js';
 import { storage } from './storage.js';
+
+// Resolved by Vite so the files are emitted into the build output
+const SOUND_URLS = {
+  correct: new URL('../correct.mp3', import.meta.url).href,
+  wrong: new URL('../wrong.mp3', import.meta.url).href,
+};
 // Import i18n commented out to avoid unused variable warning
 // import { i18n } from './i18n.js';
 
@@ -99,21 +105,27 @@ export function enableGameControls() {
 }
 
 export function playSound(type) {
-  try {
-    const sound = new Audio(`/${type}.mp3`);
-    sound.play();
-  } catch (error) {
+  const url = SOUND_URLS[type];
+  if (!url) return;
+
+  const handleError = (error) => {
     console.error('Hangfájl hiba: ', error);
-    updateFeedback('Hiba történt a hang lejátszása közben.');
+  };
+
+  try {
+    // play() rejects asynchronously (e.g. autoplay policy), so the promise must be handled too
+    Promise.resolve(new Audio(url).play()).catch(handleError);
+  } catch (error) {
+    handleError(error);
   }
 }
 
 export function setPulseAnimation(shouldPulse) {
-    if (shouldPulse) {
-        DOM.randomColor.classList.add('pulsing');
-    } else {
-        DOM.randomColor.classList.remove('pulsing');
-    }
+  if (shouldPulse) {
+    DOM.randomColor.classList.add('pulsing');
+  } else {
+    DOM.randomColor.classList.remove('pulsing');
+  }
 }
 
 export function resetUI() {
@@ -130,59 +142,60 @@ export function resetUI() {
 export function updateStatistics() {
   try {
     // Get game statistics from storage
-    const gameHistory = storage.get('game_history', []);
-    const highScores = storage.getHighScores();
-    
-    // Calculate statistics from game history
-    const totalGames = gameHistory.length;
-    const gamesWon = gameHistory.filter(game => game.won).length;
-    const totalAccuracy = gameHistory.reduce((sum, game) => sum + (game.accuracy || 0), 0);
-    
+    const stats = storage.getGameStatistics();
+    const accuracyHistory = stats.colorAccuracyHistory || [];
+
+    const totalGames = stats.totalGames;
+    const gamesWon = stats.gamesWon;
+    const bestScore = stats.bestScore;
+    const avgAccuracy =
+      accuracyHistory.length > 0
+        ? accuracyHistory.reduce((sum, value) => sum + value, 0) /
+          accuracyHistory.length
+        : 0;
+
     // Total games
     const totalGamesElement = document.getElementById('total-games');
     if (totalGamesElement) {
       totalGamesElement.textContent = totalGames.toString();
     }
-    
+
     // Win rate
     const winRateElement = document.getElementById('win-rate');
     if (winRateElement) {
-      const winRate = totalGames > 0 ? (gamesWon / totalGames * 100) : 0;
+      const winRate = totalGames > 0 ? (gamesWon / totalGames) * 100 : 0;
       winRateElement.textContent = `${Math.round(winRate)}%`;
     }
-    
+
     // Best score
     const bestScoreElement = document.getElementById('best-score');
     if (bestScoreElement) {
-      const bestScore = highScores.length > 0 ? highScores[0].score : 0;
       bestScoreElement.textContent = bestScore.toString();
     }
-    
+
     // Average accuracy
     const avgAccuracyElement = document.getElementById('avg-accuracy');
     if (avgAccuracyElement) {
-      const avgAccuracy = totalGames > 0 ? totalAccuracy / totalGames : 0;
       avgAccuracyElement.textContent = `${Math.round(avgAccuracy)}%`;
     }
-    
+
     console.log('📈 Statistics updated:', {
       totalGames,
-      winRate: `${Math.round((gamesWon / totalGames * 100) || 0)}%`,
-      bestScore: highScores.length > 0 ? highScores[0].score : 0,
-      avgAccuracy: `${Math.round((totalAccuracy / totalGames) || 0)}%`
+      winRate: `${Math.round((gamesWon / totalGames) * 100 || 0)}%`,
+      bestScore,
+      avgAccuracy: `${Math.round(avgAccuracy)}%`,
     });
-    
   } catch (error) {
     console.error('❌ Failed to update statistics:', error);
-    
+
     // Set default values on error
     const elements = {
       'total-games': '0',
       'win-rate': '0%',
       'best-score': '0',
-      'avg-accuracy': '0%'
+      'avg-accuracy': '0%',
     };
-    
+
     Object.entries(elements).forEach(([id, value]) => {
       const element = document.getElementById(id);
       if (element) element.textContent = value;
@@ -199,21 +212,25 @@ export function updateStatistics() {
 export function showToast(message, type = 'info', duration = 3000) {
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  
+
   const icons = {
     success: '✅',
     warning: '⚠️',
     error: '❌',
-    info: 'ℹ️'
+    info: 'ℹ️',
   };
-  
-  toast.innerHTML = `
-    <div class="toast-content">
-      <span class="toast-icon">${icons[type] || icons.info}</span>
-      <span class="toast-message">${message}</span>
-    </div>
-  `;
-  
+
+  const content = document.createElement('div');
+  content.className = 'toast-content';
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  icon.textContent = icons[type] || icons.info;
+  const text = document.createElement('span');
+  text.className = 'toast-message';
+  text.textContent = message;
+  content.append(icon, text);
+  toast.appendChild(content);
+
   // Add styles
   toast.style.cssText = `
     position: fixed;
@@ -229,7 +246,7 @@ export function showToast(message, type = 'info', duration = 3000) {
     animation: slideInRight 0.3s ease-out;
     font-weight: 500;
   `;
-  
+
   // Add animation styles if not already added
   if (!document.querySelector('#toast-styles')) {
     const style = document.createElement('style');
@@ -273,9 +290,9 @@ export function showToast(message, type = 'info', duration = 3000) {
     `;
     document.head.appendChild(style);
   }
-  
+
   document.body.appendChild(toast);
-  
+
   // Auto remove after duration
   setTimeout(() => {
     toast.style.animation = 'slideOutRight 0.3s ease-in';
@@ -296,7 +313,7 @@ function getToastColor(type) {
     success: '#28a745',
     warning: '#ffc107',
     error: '#dc3545',
-    info: '#17a2b8'
+    info: '#17a2b8',
   };
   return colors[type] || colors.info;
 }
@@ -309,18 +326,20 @@ function getToastColor(type) {
 export function showAchievement(achievement, description) {
   const achievementEl = document.createElement('div');
   achievementEl.className = 'achievement-notification';
-  
+
   achievementEl.innerHTML = `
     <div class="achievement-content">
       <div class="achievement-icon">🏆</div>
       <div class="achievement-text">
         <div class="achievement-title">Achievement Unlocked!</div>
-        <div class="achievement-name">${achievement}</div>
-        <div class="achievement-desc">${description}</div>
+        <div class="achievement-name"></div>
+        <div class="achievement-desc"></div>
       </div>
     </div>
   `;
-  
+  achievementEl.querySelector('.achievement-name').textContent = achievement;
+  achievementEl.querySelector('.achievement-desc').textContent = description;
+
   achievementEl.style.cssText = `
     position: fixed;
     top: 50%;
@@ -336,7 +355,7 @@ export function showAchievement(achievement, description) {
     text-align: center;
     animation: achievementPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   `;
-  
+
   // Add animation styles
   if (!document.querySelector('#achievement-styles')) {
     const style = document.createElement('style');
@@ -382,9 +401,9 @@ export function showAchievement(achievement, description) {
     `;
     document.head.appendChild(style);
   }
-  
+
   document.body.appendChild(achievementEl);
-  
+
   // Auto remove after 4 seconds
   setTimeout(() => {
     achievementEl.style.animation = 'achievementPop 0.3s reverse';
